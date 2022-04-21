@@ -1,3 +1,8 @@
+//pose detection
+let cam;
+let pose;
+let detector;
+//
 let dot, par;
 var mouse = {x: 0, y: 0};
 var trail = [];
@@ -11,6 +16,7 @@ const MAX_POINTS = 200;
 const positions = new Float32Array( MAX_POINTS * 3 );
 const positions2 = new Float32Array( (MAX_POINTS) * 3 );
 const positions3 = new Float32Array( (MAX_POINTS) * 3 );
+
 
 function setupTHREE() {
   if(params['trailPattern'] == 0){
@@ -155,8 +161,6 @@ function getPar() {
         positions.push((Math.random()-y)/15, (Math.random()+y)/15 , (Math.random()-y)/15);
         colors.push(params['particleColor3'][0]/255, params['particleColor3'][1]/255, params['particleColor3'][2]/255);
       }
-
-
 	}
 
 	const geometry = new THREE.BufferGeometry();
@@ -173,6 +177,8 @@ function getPar() {
 ///// p5.js /////
 
 function setup() {
+  cam = createCapture(VIDEO);
+  cam.hide();
   let canvas = createCanvas(640, 480);
   canvas.parent("container-p5");
   canvas.hide();
@@ -184,12 +190,42 @@ function draw() {
   noLoop();
 }
 
+async function loadPoseDetectionModel() {
+  const model = poseDetection.SupportedModels.BlazePose;
+  const detectorConfig = {
+    runtime: "tfjs",
+    enableSmoothing: true,
+    modelType: "full",
+  };
+  detector = await poseDetection.createDetector(model, detectorConfig);
+  console.log("Model Loaded!");
+
+  // initiate the estimation
+  getPoses();
+}
+
+async function getPoses() {
+  const estimationConfig = { flipHorizontal: true };
+  const timestamp = performance.now();
+  const poses = await detector.estimatePoses(
+    cam.elt,
+    estimationConfig,
+    timestamp
+  );
+
+  // get the first pose
+  pose = poses[0];
+
+  // repeat the estimation
+  getPoses();
+}
 ///// three.js /////
 
 let container, stats, gui, params;
 let scene, camera, renderer;
 let time = 0;
 let frame = 0;
+let firsttime = true;
 
 function initTHREE() {
   // scene
@@ -257,7 +293,13 @@ function animate() {
   stats.update();
   time = performance.now();
   frame++;
+  if (cam.loadedmetadata & firsttime){
+    loadPoseDetectionModel();
+    firsttime = false;
+    console.log("Video Loaded!")
+  }
 
+  if(pose){locationUpdate();}
 if(params['trailPattern'] == 0){
   if (frame%2 == 0){
     //add a new dot
@@ -302,7 +344,7 @@ function render() {
 
 // event listeners
 window.addEventListener("resize", onWindowResize);
-document.addEventListener('mousemove', onMouseMove, false);
+// document.addEventListener('mousemove', onMouseMove, false);
 
 
 
@@ -312,36 +354,56 @@ function onWindowResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-function onMouseMove(event) {
-	// Update the mouse variable
-	event.preventDefault();
-	mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-	mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
- // Make the sphere follow the mouse
-  var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
-	vector.unproject( camera );
-	var dir = vector.sub( camera.position ).normalize();
-	var distance = - camera.position.z / dir.z;
-	var pos = camera.position.clone().add( dir.multiplyScalar( distance ) );
-if(params['trailPattern'] == 0){
-  dot.mesh.position.copy(pos);
-  butterfly1.mesh.position.copy(pos);}
-if(params['trailPattern'] == 1 && par){
-  par.mesh.position.copy(pos);}
-  positions[arrayIndex ++] = pos.x;
-  positions[arrayIndex ++] = pos.y;
-  positions[arrayIndex ++] = pos.z;
+function locationUpdate(){
+  var pos = new THREE.Vector3 (-pose.keypoints3D[15].x*5,-pose.keypoints3D[15].y*5,-pose.keypoints3D[15].z*5);
+  if(params['trailPattern'] == 0){
+    dot.mesh.position.copy(pos);
+    butterfly1.mesh.position.copy(pos);}
+  if(params['trailPattern'] == 1 && par){
+    par.mesh.position.copy(pos);}
+    positions[arrayIndex ++] = pos.x;
+    positions[arrayIndex ++] = pos.y;
+    positions[arrayIndex ++] = pos.z;
 
-  positions2[arrayIndex2 ++] = positions[arrayIndex2]+0.5;
-  positions2[arrayIndex2 ++] = positions[arrayIndex2+1]+0.5;
-  positions2[arrayIndex2 ++] = positions[arrayIndex2+2];
+    positions2[arrayIndex2 ++] = positions[arrayIndex2]+0.5;
+    positions2[arrayIndex2 ++] = positions[arrayIndex2+1]+0.5;
+    positions2[arrayIndex2 ++] = positions[arrayIndex2+2];
 
-  positions3[arrayIndex3 ++] = positions[arrayIndex3]-0.5;
-  positions3[arrayIndex3 ++] = positions[arrayIndex3+1]-0.5;
-  positions3[arrayIndex3 ++] = positions[arrayIndex3+2];
-	// Make the sphere follow the mouse
-//	mouseMesh.position.set(event.clientX, event.clientY, 0);
-};
+    positions3[arrayIndex3 ++] = positions[arrayIndex3]-0.5;
+    positions3[arrayIndex3 ++] = positions[arrayIndex3+1]-0.5;
+    positions3[arrayIndex3 ++] = positions[arrayIndex3+2];
+}
+// function onMouseMove(event) {
+// 	// Update the mouse variable
+// 	event.preventDefault();
+// 	mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+// 	mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+//  // Make the sphere follow the mouse
+//   var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+// 	vector.unproject( camera );
+// 	var dir = vector.sub( camera.position ).normalize();
+// 	var distance = - camera.position.z / dir.z;
+// 	var pos = camera.position.clone().add( dir.multiplyScalar( distance ) );
+//   // console.log(pos)
+// if(params['trailPattern'] == 0){
+//   dot.mesh.position.copy(pos);
+//   butterfly1.mesh.position.copy(pos);}
+// if(params['trailPattern'] == 1 && par){
+//   par.mesh.position.copy(pos);}
+//   positions[arrayIndex ++] = pos.x;
+//   positions[arrayIndex ++] = pos.y;
+//   positions[arrayIndex ++] = pos.z;
+//
+//   positions2[arrayIndex2 ++] = positions[arrayIndex2]+0.5;
+//   positions2[arrayIndex2 ++] = positions[arrayIndex2+1]+0.5;
+//   positions2[arrayIndex2 ++] = positions[arrayIndex2+2];
+//
+//   positions3[arrayIndex3 ++] = positions[arrayIndex3]-0.5;
+//   positions3[arrayIndex3 ++] = positions[arrayIndex3+1]-0.5;
+//   positions3[arrayIndex3 ++] = positions[arrayIndex3+2];
+// 	// Make the sphere follow the mouse
+// //	mouseMesh.position.set(event.clientX, event.clientY, 0);
+// };
 
 function butterfly(bconf){
   var geometry = new THREE.PlaneGeometry(bconf.wingW, bconf.wingH);
