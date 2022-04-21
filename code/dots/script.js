@@ -3,12 +3,12 @@ let cam;
 let pose;
 let detector;
 //
-let dot, par;
+let dot, dot2, par;
 var mouse = {x: 0, y: 0};
-var trail = [];
-var trail2 = [];
+var trail = trail2 = [];
+var trailP = [];
 let bodyTexture,wingTexture;
-let butterfly1;
+let butterfly1, butterfly0;
 let textureBlue;
 let lineWhite, lineBlue, linePurple;
 let arrayIndex = arrayIndex2 = arrayIndex3 = 0;
@@ -21,11 +21,16 @@ const positions3 = new Float32Array( (MAX_POINTS) * 3 );
 function setupTHREE() {
   if(params['trailPattern'] == 0){
     dot = new Ico(createVector(0,0,0));
+    dot2 = new Ico(createVector(0,0,0));
     bodyTexture = new THREE.TextureLoader().load("media/body.png");
     wingTexture = new THREE.TextureLoader().load('media/wing2.png');
     var bconf =
         { bodyTexture: bodyTexture, bodyW: 0.2, bodyH: 0.36, wingTexture: wingTexture, wingW: 0.3125, wingH: 0.469, wingX: 0.18 };
+    butterfly0 = new Butterfly(createVector(10,10,0), bconf);
     butterfly1 = new Butterfly(createVector(10,10,0), bconf);
+
+    butterfly0.mesh.children[0].autoUpdateMatrix = false;
+    butterfly0.mesh.children[1].autoUpdateMatrix = false;
 
     butterfly1.mesh.children[0].autoUpdateMatrix = false;
     butterfly1.mesh.children[1].autoUpdateMatrix = false;
@@ -45,59 +50,59 @@ function setupTHREE() {
   const drawCount = MAX_POINTS; // draw the first 2 points, only
   geometry.setDrawRange( 0, drawCount );
   geometry2.setDrawRange( 0, drawCount );
-  geometry3.setDrawRange( 0, drawCount);
+  // geometry3.setDrawRange( 0, drawCount);
   geometry.computeBoundingSphere();
   geometry2.computeBoundingSphere();
-  geometry3.computeBoundingSphere();
+  // geometry3.computeBoundingSphere();
 
   // material
   const materialWhite = new THREE.LineBasicMaterial( { color: 0xffffff} );
   const materialBlue = new THREE.LineDashedMaterial( { color: 0x87cefa, dashSize: 3, gapSize: 1, } );
-  const materialPurple = new THREE.LineDashedMaterial( { color: 0xE0B0FF, dashSize: 0.5, gapSize: 0.1, } );
+  // const materialPurple = new THREE.LineDashedMaterial( { color: 0xE0B0FF, dashSize: 0.5, gapSize: 0.1, } );
 
   // line
   lineWhite = new THREE.Line( geometry, materialWhite );
   lineBlue = new THREE.LineSegments( geometry2, materialBlue );
     lineBlue.computeLineDistances();
-  linePurple = new THREE.LineSegments( geometry3, materialPurple );
-    linePurple.computeLineDistances();
+  // linePurple = new THREE.LineSegments( geometry3, materialPurple );
+  //   linePurple.computeLineDistances();
   //white
   positions[arrayIndex ++] = 0;
   positions[arrayIndex ++] = 0;
   positions[arrayIndex ++] = 0;
 
-  positions[arrayIndex ++] = 0;
-  positions[arrayIndex ++] = 0;
-  positions[arrayIndex ++] = 0;
-
-  positions[arrayIndex ++] = 0;
-  positions[arrayIndex ++] = 0;
-  positions[arrayIndex ++] = 0;
+  // positions[arrayIndex ++] = 0;
+  // positions[arrayIndex ++] = 0;
+  // positions[arrayIndex ++] = 0;
+  //
+  // positions[arrayIndex ++] = 0;
+  // positions[arrayIndex ++] = 0;
+  // positions[arrayIndex ++] = 0;
 
   //blue
   positions2[arrayIndex2 ++] = 0;
   positions2[arrayIndex2 ++] = 0;
   positions2[arrayIndex2 ++] = 0;
 
-  positions2[arrayIndex2 ++] = 0;
-  positions2[arrayIndex2 ++] = 0;
-  positions2[arrayIndex2 ++] = 0;
+  // positions2[arrayIndex2 ++] = 0;
+  // positions2[arrayIndex2 ++] = 0;
+  // positions2[arrayIndex2 ++] = 0;
 
-  //purple
-  positions3[arrayIndex3 ++] = 0;
-  positions3[arrayIndex3 ++] = 0;
-  positions3[arrayIndex3 ++] = 0;
+  // //purple
+  // positions3[arrayIndex3 ++] = 0;
+  // positions3[arrayIndex3 ++] = 0;
+  // positions3[arrayIndex3 ++] = 0;
 
   scene.add( lineWhite );
   scene.add( lineBlue );
-  scene.add( linePurple );
+  // scene.add( linePurple );
 
 }
 
 function updateTHREE() {
   lineWhite.geometry.attributes.position.needsUpdate = true;
   lineBlue.geometry.attributes.position.needsUpdate = true;
-  linePurple.geometry.attributes.position.needsUpdate = true;
+  // linePurple.geometry.attributes.position.needsUpdate = true;
 
   if (arrayIndex >= MAX_POINTS*3){
     arrayIndex = 0;
@@ -105,15 +110,15 @@ function updateTHREE() {
   if (arrayIndex2 >= MAX_POINTS*3){
     arrayIndex2 = 0;
   }
-  if (arrayIndex3 >= MAX_POINTS*3){
-    arrayIndex3 = 0;
-  }
+  // if (arrayIndex3 >= MAX_POINTS*3){
+  //   arrayIndex3 = 0;
+  // }
 }
 
 
 function trailChanged(){
   if(params['trailPattern'] == 0){
-    for (let i =0; i<trail2.length; i++){scene.remove(trail2[i].mesh);}
+    for (let i =0; i<trailP.length; i++){scene.remove(trailP[i].mesh);}
     scene.remove(par.mesh)
     scene.add(butterfly1.mesh);  }
   if(params['trailPattern'] == 1){
@@ -232,7 +237,7 @@ function initTHREE() {
   scene = new THREE.Scene();
   //Load background texture
 const loader = new THREE.TextureLoader();
-loader.load('media/background3.jpeg' , function(texture)
+loader.load('media/background1.jpeg' , function(texture)
             {
              scene.background = texture;
             });
@@ -266,13 +271,13 @@ loader.load('media/background3.jpeg' , function(texture)
   gui = new dat.gui.GUI();
   params = {
     trailPattern: 0,
-    background: 3,
+    background: 1,
     particleColor: [0,111,255],
     particleColor2:[104, 168, 252],
     particleColor3:[217, 233, 255]
   };
   gui.add(params, "trailPattern", { icowbutterfly: 0, particles: 1}).onChange(trailChanged);
-  gui.add(params, "background", { sakura: 0, redmoon: 1, purpledesert: 2, city:3}).onChange(backgroundChanged);
+  gui.add(params, "background", { blue: 0, island: 1, terrain: 2, red:3}).onChange(backgroundChanged);
   gui.addColor(params, "particleColor");
   gui.addColor(params, "particleColor2");
   gui.addColor(params, "particleColor3");
@@ -293,6 +298,7 @@ function animate() {
   stats.update();
   time = performance.now();
   frame++;
+
   if (cam.loadedmetadata & firsttime){
     loadPoseDetectionModel();
     firsttime = false;
@@ -300,21 +306,30 @@ function animate() {
   }
 
   if(pose){locationUpdate();}
-if(params['trailPattern'] == 0){
-  if (frame%2 == 0){
-    //add a new dot
-    let newDot, pos;
-    // newDot = new Dot(dot.mesh.position);
-    pos = createVector(dot.mesh.position.x,dot.mesh.position.y,0);
-    newDot = new Ico(pos);
-    newDot.update();
-    trail.push(newDot);
-  }
+
+  if(params['trailPattern'] == 0){
+    if (frame%2 == 0){
+      //add a new dot
+      let newDot, pos, newDot2, pos2;
+      // newDot = new Dot(dot.mesh.position);
+      pos = createVector(dot.mesh.position.x,dot.mesh.position.y,dot.mesh.position.z);
+      pos2 = createVector(dot2.mesh.position.x,dot2.mesh.position.y,dot2.mesh.position.z);
+      newDot = new Ico(pos);
+      newDot2 = new Ico(pos2);
+      newDot.update();
+      newDot2.update();
+      trail.push(newDot);
+      trail2.push(newDot2);
+    }
   if (trail.length > 100){
     let deaddot = trail.shift();
+    let deaddot2 = trail2.shift();
     scene.remove(deaddot.mesh);
+    scene.remove(deaddot2.mesh);
   }
 
+  butterfly0.mesh.children[1].rotation.y = Math.sin(frame / 10);
+  butterfly0.mesh.children[2].rotation.y = Math.sin(- frame / 10);
   butterfly1.mesh.children[1].rotation.y = Math.sin(frame / 10);
   butterfly1.mesh.children[2].rotation.y = Math.sin(- frame / 10);
   // butterfly1.applyDestination(dot.mesh.position.x,dot.mesh.position.y,0);
@@ -327,9 +342,9 @@ if(params['trailPattern'] == 1 && par){
   pos2 = createVector(par.mesh.position.x,par.mesh.position.y,0);
   newPar = new Par(pos2);
   newPar.update();
-  trail2.push(newPar);
-  if (trail2.length > 100){
-    let deadPar = trail2.shift();
+  trailP.push(newPar);
+  if (trailP.length > 100){
+    let deadPar = trailP.shift();
     scene.remove(deadPar.mesh);
   }
 }
@@ -356,22 +371,30 @@ function onWindowResize() {
 
 function locationUpdate(){
   var pos = new THREE.Vector3 (-pose.keypoints3D[15].x*5,-pose.keypoints3D[15].y*5,-pose.keypoints3D[15].z*5);
+  var pos2 = new THREE.Vector3 (-pose.keypoints3D[16].x*5,-pose.keypoints3D[16].y*5,-pose.keypoints3D[16].z*5);
+
   if(params['trailPattern'] == 0){
     dot.mesh.position.copy(pos);
-    butterfly1.mesh.position.copy(pos);}
+    dot2.mesh.position.copy(pos2);
+    butterfly0.mesh.position.copy(pos)
+    butterfly1.mesh.position.copy(pos2);}
   if(params['trailPattern'] == 1 && par){
     par.mesh.position.copy(pos);}
     positions[arrayIndex ++] = pos.x;
     positions[arrayIndex ++] = pos.y;
     positions[arrayIndex ++] = pos.z;
+    positions2[arrayIndex ++] = pos2.x;
+    positions2[arrayIndex ++] = pos2.y;
+    positions2[arrayIndex ++] = pos2.z;
 
-    positions2[arrayIndex2 ++] = positions[arrayIndex2]+0.5;
-    positions2[arrayIndex2 ++] = positions[arrayIndex2+1]+0.5;
-    positions2[arrayIndex2 ++] = positions[arrayIndex2+2];
 
-    positions3[arrayIndex3 ++] = positions[arrayIndex3]-0.5;
-    positions3[arrayIndex3 ++] = positions[arrayIndex3+1]-0.5;
-    positions3[arrayIndex3 ++] = positions[arrayIndex3+2];
+    // positions2[arrayIndex2 ++] = positions[arrayIndex2]+0.5;
+    // positions2[arrayIndex2 ++] = positions[arrayIndex2+1]+0.5;
+    // positions2[arrayIndex2 ++] = positions[arrayIndex2+2];
+
+    // positions3[arrayIndex3 ++] = positions[arrayIndex3]-0.5;
+    // positions3[arrayIndex3 ++] = positions[arrayIndex3+1]-0.5;
+    // positions3[arrayIndex3 ++] = positions[arrayIndex3+2];
 }
 // function onMouseMove(event) {
 // 	// Update the mouse variable
