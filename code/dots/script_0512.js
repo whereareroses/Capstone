@@ -25,17 +25,17 @@ function setupTHREE() {
     dot = new Ico(createVector(0,0,0));
     dot2 = new Ico(createVector(0,0,0));
     bodyTexture = new THREE.TextureLoader().load("media/body.png");
-    wingTexture = new THREE.TextureLoader().load('media/wing2.png');
+    wingTexture = new THREE.TextureLoader().load('media/BUT-01.png');
     var bconf =
         { bodyTexture: bodyTexture, bodyW: 0.2, bodyH: 0.36, wingTexture: wingTexture, wingW: 0.3125, wingH: 0.469, wingX: 0.18 };
     butterfly0 = new Butterfly(createVector(10,10,0), bconf);
-    butterfly1 = new Butterfly(createVector(10,10,0), bconf);
+    // butterfly1 = new Butterfly(createVector(10,10,0), bconf);
 
     butterfly0.mesh.children[0].autoUpdateMatrix = false;
     butterfly0.mesh.children[1].autoUpdateMatrix = false;
 
-    butterfly1.mesh.children[0].autoUpdateMatrix = false;
-    butterfly1.mesh.children[1].autoUpdateMatrix = false;
+    // butterfly1.mesh.children[0].autoUpdateMatrix = false;
+    // butterfly1.mesh.children[1].autoUpdateMatrix = false;
   }
 
   // geometry
@@ -347,9 +347,9 @@ function animate() {
   butterfly0.mesh.rotation.x = Math.PI/4;
   butterfly0.mesh.children[1].rotation.y = Math.sin(frame / 10);
   butterfly0.mesh.children[2].rotation.y = Math.sin(- frame / 10);
-  butterfly1.mesh.rotation.x = Math.PI/4;
-  butterfly1.mesh.children[1].rotation.y = Math.sin(frame / 10);
-  butterfly1.mesh.children[2].rotation.y = Math.sin(- frame / 10);
+  // butterfly1.mesh.rotation.x = Math.PI/4;
+  // butterfly1.mesh.children[1].rotation.y = Math.sin(frame / 10);
+  // butterfly1.mesh.children[2].rotation.y = Math.sin(- frame / 10);
 }
 if(params['trailPattern'] == 1 && par){
   let newPar, pos2;
@@ -384,16 +384,7 @@ function onWindowResize() {
 }
 
 function locationUpdate(){
-  // const scale = 5;
-  // let x = map(pose.keypoints3D[15].x, 0, 640, -1, 1) * scale;
-  // let y = map(pose.keypoints3D[15].y, 0, 480, 1, -1) * scale;
-  // let z = map(pose.keypoints3D[15].z, 0, 100, 1, -1) * scale;
-  // let x2 = map(pose.keypoints3D[16].x, 0, 640, 1, -1) * scale;
-  // let y2 = map(pose.keypoints3D[16].y, 0, 480, -1, 1) * scale;
-  // let z2 = map(pose.keypoints3D[16].z, 0, 100, 1, -1) * scale;
-  //
-  // var pos = new THREE.Vector3 (x,y,z);
-  // var pos2 = new THREE.Vector3 (x2,y2,z2);
+
   var pos = new THREE.Vector3 (-pose.keypoints3D[15].x*5,-pose.keypoints3D[15].y*5,-pose.keypoints3D[15].z*5);
   var pos2 = new THREE.Vector3 (-pose.keypoints3D[16].x*5,-pose.keypoints3D[16].y*5,-pose.keypoints3D[16].z*5);
   var posNose = new THREE.Vector3 (-pose.keypoints3D[0].x*5,-pose.keypoints3D[0].y*5,-pose.keypoints3D[0].z*5);
