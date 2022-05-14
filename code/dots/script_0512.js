@@ -12,7 +12,7 @@ let butterfly1, butterfly0;
 let textureBlue;
 let lineWhite, lineBlue;
 let pointCloudPlane;
-let pointCloudTracing;
+let pointCloudTracing, pointCloudTracing2;
 let arrayIndex = arrayIndex2 = arrayIndex3 = 0;
 const MAX_POINTS = 200;
 const WORLD_SIZE = 100;
@@ -22,6 +22,7 @@ const positions2 = new Float32Array( (MAX_POINTS) * 3 );
 const positions3 = new Float32Array( (MAX_POINTS) * 3 );
 let positionsParticlePlane = [];
 let positionsParticleTracing = [];
+let positionsParticleTracing2 = [];
 
 
 
@@ -37,13 +38,13 @@ function setupTHREE() {
     var bconf =
         { bodyTexture: bodyTexture, bodyW: 0.2, bodyH: 0.36, wingTexture: wingTexture, wingW: 0.3125, wingH: 0.469, wingX: 0.18 };
     butterfly0 = new Butterfly(createVector(10,10,0), bconf);
-    // butterfly1 = new Butterfly(createVector(10,10,0), bconf);
+    butterfly1 = new Butterfly(createVector(10,10,0), bconf);
 
     butterfly0.mesh.children[0].autoUpdateMatrix = false;
     butterfly0.mesh.children[1].autoUpdateMatrix = false;
 
-    // butterfly1.mesh.children[0].autoUpdateMatrix = false;
-    // butterfly1.mesh.children[1].autoUpdateMatrix = false;
+    butterfly1.mesh.children[0].autoUpdateMatrix = false;
+    butterfly1.mesh.children[1].autoUpdateMatrix = false;
   }
 
   // geometry
@@ -94,20 +95,22 @@ function setupTHREE() {
       positionsParticlePlane.push(tParticle);
     }
   }
+  pointCloudPlane = getPoints2(positionsParticlePlane);
+  scene.add(pointCloudPlane);
+
 //position particles for the tracing
   for (let i = 0; i < MAX_PARTICLE_NUMBER; i++) {
       let yParticle = new Particle()
         .setPosition(random(-1, 1), 0, 0)
         .setVelocity(random(-0.1, 0.1), random(-0.1, 0.1), random(-0.1, 0.1));
       positionsParticleTracing.push(yParticle);
+      positionsParticleTracing2.push(yParticle);
     }
 
-  pointCloudPlane = getPoints2(positionsParticlePlane);
-  scene.add(pointCloudPlane);
-
-  pointCloudTracing = getPoints(positionsParticleTracing);
+  pointCloudTracing = getPoints(positionsParticleTracing, 0);
   scene.add(pointCloudTracing);
-
+  pointCloudTracing2 = getPoints(positionsParticleTracing2, 1);
+  scene.add(pointCloudTracing2);
 }
 
 function updateTHREE() {
@@ -120,6 +123,7 @@ function updateTHREE() {
   if (arrayIndex2 >= MAX_POINTS*3){
     arrayIndex2 = 0;
   }
+
 
 //for plane particles
 for (let i = 0; i < positionsParticlePlane.length; i++) {
@@ -138,29 +142,38 @@ for (let i = 0; i < positionsParticlePlane.length; i++) {
 pointCloudPlane.geometry.setDrawRange(0, positionsParticlePlane.length); // ***
 pointCloudPlane.geometry.attributes.position.needsUpdate = true;
 
+
 //for tracing particles
 // generate more particles
   while (positionsParticleTracing.length < MAX_PARTICLE_NUMBER) {
     let tParticle = new Particle()
       // .setPosition(sin(frame * 0.01) , sin(-frame * 0.01), cos(frame * 0.01))
       .setVelocity(random(-0.001, 0.001), random(-0.001, 0.001), random(-0.01, 0.001));
+
     if (pose){
       var pos = new THREE.Vector3 (-pose.keypoints3D[15].x*5,-pose.keypoints3D[15].y*4,-pose.keypoints3D[15].z*5);
-      tParticle.setPosition(pos.x, pos.y, pos.z)
+      tParticle.setPosition(pos.x, pos.y, pos.z);
     }
     positionsParticleTracing.push(tParticle);
   }
 
+  while (positionsParticleTracing2.length < MAX_PARTICLE_NUMBER) {
+    let yParticle = new Particle()
+      // .setPosition(sin(frame * 0.01) , sin(-frame * 0.01), cos(frame * 0.01))
+      .setVelocity(random(-0.001, 0.001), random(-0.001, 0.001), random(-0.01, 0.001));
+
+    if (pose){
+      var pos = new THREE.Vector3 (-pose.keypoints3D[16].x*5,-pose.keypoints3D[16].y*4,-pose.keypoints3D[16].z*5);
+      yParticle.setPosition(pos.x, pos.y, pos.z);
+    }
+    positionsParticleTracing2.push(yParticle);
+  }
+
+
 // update the particles first
 for (let i = 0; i < positionsParticleTracing.length; i++) {
   let p = positionsParticleTracing[i];
-if(pose){
-  var pos = new THREE.Vector3 (-pose.keypoints3D[15].x*5,-pose.keypoints3D[15].y*4,-pose.keypoints3D[15].z*5);
-  p.attractedTo(pos.x, pos.y, pos.z);
-}else{
-  p.attractedTo(0, 0, 0);
-}
-
+  p.flow1();
   p.move();
   p.rotate();
   p.age();
@@ -168,29 +181,69 @@ if(pose){
     positionsParticleTracing.splice(i, 1);
     i--;
   }
+
+  let y = positionsParticleTracing2[i];
+
+if(y){
+
+  y.flow();
+  y.move();
+  y.rotate();
+  y.age();
+  if (y.isDone) {
+    positionsParticleTracing2.splice(i, 1);
+    i--;
+  }
+}
 }
 
 // then update the points
 let positionArrayTracing = pointCloudTracing.geometry.attributes.position.array;
+let positionArrayTracing2 = pointCloudTracing2.geometry.attributes.position.array;
+
 let colorArray = pointCloudTracing.geometry.attributes.color.array;
+let colorArray2 = pointCloudTracing2.geometry.attributes.color.array;
+
 for (let i = 0; i < positionsParticleTracing.length; i++) {
   let p = positionsParticleTracing[i];
+
   let ptIndex = i * 3;
   // position
   positionArrayTracing[ptIndex + 0] = p.pos.x;
   positionArrayTracing[ptIndex + 1] = p.pos.y;
   positionArrayTracing[ptIndex + 2] = p.pos.z;
+
   // color
   colorArray[ptIndex + 0] = 0.1 * p.lifespan; // red
   colorArray[ptIndex + 1] = 0.5 * p.lifespan; // green
   colorArray[ptIndex + 2] = 1.0 * p.lifespan; // blue
 }
+
+for (let i = 0; i < positionsParticleTracing2.length; i++) {
+  let p = positionsParticleTracing2[i];
+
+  let ptIndex = i * 3;
+  // position
+  positionArrayTracing2[ptIndex + 0] = p.pos.x;
+  positionArrayTracing2[ptIndex + 1] = p.pos.y;
+  positionArrayTracing2[ptIndex + 2] = p.pos.z;
+
+  // color
+  colorArray2[ptIndex + 0] = 1.0 * p.lifespan; // red
+  colorArray2[ptIndex + 1] = 1.0 * p.lifespan; // green
+  colorArray2[ptIndex + 2] = 1.0 * p.lifespan; // blue
+}
+
+
+
+
+
 pointCloudTracing.geometry.setDrawRange(0, positionsParticleTracing.length); // ***
 pointCloudTracing.geometry.attributes.position.needsUpdate = true;
 pointCloudTracing.geometry.attributes.color.needsUpdate = true;
-
-
-
+pointCloudTracing2.geometry.setDrawRange(0, positionsParticleTracing.length); // ***
+pointCloudTracing2.geometry.attributes.position.needsUpdate = true;
+pointCloudTracing2.geometry.attributes.color.needsUpdate = true;
 }
 
 
@@ -220,7 +273,7 @@ function getIco() {
 }
 
 function getIco2() {
-  textureBlue = new THREE.TextureLoader().load( 'media/longpic.jpeg' );
+ textureBlue = new THREE.TextureLoader().load( 'media/longpic.jpeg' );
   let geometry = new THREE.IcosahedronGeometry(Math.random()*0.1);
   let material = new THREE.MeshBasicMaterial( { color: 0xffffff, map: textureBlue } );
   let mesh = new THREE.Mesh(geometry, material);
@@ -297,6 +350,7 @@ function getPoints(objects) {
   const texture = new THREE.TextureLoader().load(
     "https://cdn.glitch.com/6d967e98-4001-4b95-a1e3-3a52daacd19c%2Fparticle_texture.jpg?v=1615805765774"
   );
+
   const material = new THREE.PointsMaterial({
     vertexColors: true,
     size: 0.1,
@@ -305,9 +359,13 @@ function getPoints(objects) {
     blending: THREE.AdditiveBlending,
     map: texture
   });
+
   const points = new THREE.Points(geometry, material);
   return points;
 }
+
+
+
 
 ///// p5.js /////
 
@@ -455,9 +513,9 @@ function animate() {
   butterfly0.mesh.rotation.x = Math.PI/4;
   butterfly0.mesh.children[1].rotation.y = Math.sin(frame / 10);
   butterfly0.mesh.children[2].rotation.y = Math.sin(- frame / 10);
-  // butterfly1.mesh.rotation.x = Math.PI/4;
-  // butterfly1.mesh.children[1].rotation.y = Math.sin(frame / 10);
-  // butterfly1.mesh.children[2].rotation.y = Math.sin(- frame / 10);
+  butterfly1.mesh.rotation.x = Math.PI/4;
+  butterfly1.mesh.children[1].rotation.y = Math.sin(frame / 10);
+  butterfly1.mesh.children[2].rotation.y = Math.sin(- frame / 10);
 }
 if(params['trailPattern'] == 1 && par){
   let newPar, pos2;
@@ -506,15 +564,19 @@ function locationUpdate(){
     butterfly0.applyDestination(pos2.x, pos2.y, pos2.z);
     butterfly0.move();
     butterfly0.update();
+    butterfly1.applyDestination(pos.x, pos.y, pos.z);
+    butterfly1.move();
+    butterfly1.update();
   }
   if(params['trailPattern'] == 1 && par){
     par.mesh.position.copy(pos);}
-    positions[arrayIndex ++] = pos.x;
-    positions[arrayIndex ++] = pos.y;
-    positions[arrayIndex ++] = pos.z;
-    positions2[arrayIndex ++] = pos2.x;
-    positions2[arrayIndex ++] = pos2.y;
-    positions2[arrayIndex ++] = pos2.z;
+
+    positions[arrayIndex ++] = posFootL.x;
+    positions[arrayIndex ++] = posFootL.y;
+    positions[arrayIndex ++] = posFootL.z;
+    positions2[arrayIndex ++] = posFootR.x;
+    positions2[arrayIndex ++] = posFootR.y;
+    positions2[arrayIndex ++] = posFootR.z;
 
 
     // positions2[arrayIndex2 ++] = positions[arrayIndex2]+0.5;
@@ -628,7 +690,7 @@ class Particle {
     this.vel = createVector();
     this.acc = createVector();
 
-    this.scl = createVector(1, 1, 1);
+    this.scl = createVector(2, 2, 2);
     this.mass = this.scl.x * this.scl.y * this.scl.z;
 
     this.rot = createVector();
