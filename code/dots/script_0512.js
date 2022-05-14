@@ -33,10 +33,10 @@ function setupTHREE() {
   if(params['trailPattern'] == 0){
     dot = new Ico(createVector(0,0,0));
     dot2 = new Ico(createVector(0,0,0));
-    bodyTexture = new THREE.TextureLoader().load("media/body.png");
+    bodyTexture = new THREE.TextureLoader().load("media/body2.png");
     wingTexture = new THREE.TextureLoader().load('media/BUT-01.png');
     var bconf =
-        { bodyTexture: bodyTexture, bodyW: 0.2, bodyH: 0.36, wingTexture: wingTexture, wingW: 0.3125, wingH: 0.469, wingX: 0.18 };
+        { bodyTexture: bodyTexture, bodyW: 0.3, bodyH: 0.5, wingTexture: wingTexture, wingW: 0.3125, wingH: 0.469, wingX: 0.18 };
     butterfly0 = new Butterfly(createVector(10,10,0), bconf);
     butterfly1 = new Butterfly(createVector(10,10,0), bconf);
 
