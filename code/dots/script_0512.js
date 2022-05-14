@@ -3,7 +3,7 @@ let cam;
 let pose;
 let detector;
 //
-let dot, dot2, par;
+let dot, dot2, par, controls;
 var mouse = {x: 0, y: 0};
 var trail = trail2 = [];
 var trailP = [];
@@ -447,8 +447,8 @@ function initTHREE() {
   container.appendChild(renderer.domElement);
 
   // controls
-  let controls = new THREE.OrbitControls(camera, renderer.domElement);
-
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.autoRotate = true;
   // gui
   // https://davidwalsh.name/dat-gui
   gui = new dat.gui.GUI();
@@ -482,7 +482,9 @@ function animate() {
   stats.update();
   time = performance.now();
   frame++;
-
+  if (frame > 1000){
+      controls.update();
+  }
   if (cam.loadedmetadata & firsttime){
     loadPoseDetectionModel();
     firsttime = false;
